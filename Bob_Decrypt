@@ -1,0 +1,112 @@
+package org.owasp.java.crypto;
+
+import javax.crypto.SecretKey;
+import javax.crypto.Cipher;
+import java.io.*;
+import org.apache.commons.io.*;
+
+import java.security.NoSuchAlgorithmException;
+import java.security.InvalidKeyException;
+import java.security.InvalidAlgorithmParameterException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import org.apache.commons.codec.binary.Base64; //import sun.misc.BASE64Encoder; Better to use Apache package
+
+public class Bob_Decrypt {
+	public static void main(String[] args) {
+		
+		String strCipherText = new String();
+		String strDecryptedText = new String();
+		File commitmentFile = new File("d:\\Commitment.txt");
+
+		
+//------Copy the SecretKey that we used to ENCRYPT the message from File----------------
+		SecretKey secretKey = deSerializeSecretKey();
+		System.out.println("The shared Secret is: '" +secretKey + "'");
+		
+		try{
+		/**
+		 *  Step 1. Create a Cipher by specifying the following parameters
+		 * 			a. Algorithm name - here it is AES
+		 */
+		
+			Cipher aesCipher = Cipher.getInstance("AES");
+		
+		/**
+		 *  Step 2. Decrypt the Data
+		 *  		1. Get Commitment from File
+		 *  		2. Initialize the Cipher for Decryption 
+		 *  		3. Decrypt the cipher bytes using doFinal method 
+		 */		
+			
+		strCipherText = FileUtils.readFileToString(commitmentFile);
+		 
+		byte[] byteCipherText = new Base64().decode(strCipherText);
+		aesCipher.init(Cipher.DECRYPT_MODE,secretKey,aesCipher.getParameters());
+				
+		int CipherTextLength = strCipherText.length();
+		System.out.println("'CipherText Length - " +CipherTextLength+" Bytes'");
+		
+		byte[] byteDecryptedText = aesCipher.doFinal(byteCipherText);
+		strDecryptedText = new String(byteDecryptedText);
+		
+		System.out.println(" Decrypted Text message is : '" +strDecryptedText +"'");
+		
+		}
+//----------------------------------------EXCEPTION HANDLING-------------------------------------------------
+		catch (NoSuchAlgorithmException noSuchAlgo)
+		{
+			System.out.println(" No Such Algorithm exists " + noSuchAlgo);
+		}
+		
+		catch(IOException ioexception){
+			System.out.println("'Cannot Read CipherText from Commitment.txt'");
+		}
+		
+		catch (NoSuchPaddingException noSuchPad)
+		{
+			System.out.println(" No Such Padding exists " + noSuchPad);
+		}
+		catch (InvalidKeyException invalidKey)
+		{
+			System.out.println(" Invalid Key " + invalidKey);
+		}
+		catch (BadPaddingException badPadding)
+		{
+			System.out.println(" Bad Padding " + badPadding);
+		}
+		catch (IllegalBlockSizeException illegalBlockSize)
+		{
+			System.out.println(" Illegal Block Size " + illegalBlockSize);
+		}
+		catch (InvalidAlgorithmParameterException invalidParam)
+		{
+			System.out.println(" Invalid Parameter " + invalidParam);
+		}
+	}
+//-------------------------------------END OF TRY{}-------------------------------------------------------
+//----------------
+	public static SecretKey deSerializeSecretKey()
+	{
+		SecretKey secretKey;
+		try{
+			 
+			   FileInputStream fin = new FileInputStream("d:\\secretKey.ser");
+			   ObjectInputStream ois = new ObjectInputStream(fin);
+			   secretKey = (SecretKey) ois.readObject();
+			   ois.close();	 
+			   return secretKey;
+	 
+		   }
+		catch(Exception ex)
+		{
+			   System.out.println("'SecretKey not Found !!'");
+			   ex.printStackTrace();
+			   return null;
+		} 
+	}
+//-----------------------------------------------------------------------------------------------------
+}
+
+
